@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Calendar</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #controls {
+            margin-bottom: 20px;
+        }
+        #cellSize {
+            width: 150px;
+            vertical-align: middle;
+        }
+        #cellSizeValue {
+            display: inline-block;
+            margin-left: 10px;
+            font-weight: bold;
+        }
+        #calendar {
+            margin-top: 20px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            text-align: center;
+            table-layout: fixed; /* Ensures cells have equal width */
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 10px;
+            position: relative;
+            transition: width 0.3s ease, height 0.3s ease; /* Smooth transition for resizing */
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        td::before {
+            content: attr(data-date); /* Use the data-date attribute for the date */
+            position: absolute;
+            top: 5px; /* Position at the top */
+            left: 5px; /* Position at the left */
+            font-weight: bold;
+        }
+        @media print {
+            @page {
+                size: landscape;
+            }
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            #controls {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Dynamic Calendar Generator</h1>
+    <div id="controls">
+        <label for="month">Select Month:</label>
+        <select id="month">
+            <option value="1">January</option>
+            <option value="2">February</option>
+            <option value="3">March</option>
+            <option value="4">April</option>
+            <option value="5">May</option>
+            <option value="6">June</option>
+            <option value="7">July</option>
+            <option value="8">August</option>
+            <option value="9">September</option>
+            <option value="10">October</option>
+            <option value="11">November</option>
+            <option value="12">December</option>
+        </select>
+
+        <label for="year">Select Year:</label>
+        <input type="number" id="year" min="1900" max="2100">
+
+        <label for="cellSize">Cell Size:</label>
+        <input type="range" id="cellSize" min="50" max="200" value="75">
+        <span id="cellSizeValue">75px</span>
+
+        <button onclick="generateCalendar()">Generate Calendar</button>
+        <button onclick="window.print()">Print Calendar</button>
+    </div>
+
+    <div id="calendar"></div>
+
+    <script>
+        function getMonthName(month) {
+            const monthNames = [
+                "January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"
+            ];
+            return monthNames[month - 1]; // Months are 0-indexed in the array
+        }
+
+        function adjustCellSize(size) {
+            const cells = document.querySelectorAll('td');
+            cells.forEach(cell => {
+                cell.style.width = `${size}px`;
+                cell.style.height = `${size}px`;
+            });
+        }
+
+        function generateCalendar() {
+            const month = parseInt(document.getElementById('month').value);
+            const year = parseInt(document.getElementById('year').value);
+
+            // Update the heading with the selected month and year
+            const heading = document.querySelector('h1');
+            heading.textContent = `${getMonthName(month)} ${year}`;
+
+            // Clear previous calendar
+            const calendarDiv = document.getElementById('calendar');
+            calendarDiv.innerHTML = '';
+
+            // Generate and append the new calendar
+            calendarDiv.appendChild(createCalendarTable(year, month));
+
+            // Adjust cell size based on the slider's value
+            const cellSizeSlider = document.getElementById('cellSize');
+            adjustCellSize(cellSizeSlider.value);
+        }
+
+        function createCalendarTable(year, month) {
+            const daysInMonth = new Date(year, month, 0).getDate();
+            const firstDayOfWeek = new Date(year, month - 1, 1).getDay();
+
+            const table = document.createElement('table');
+            table.setAttribute('border', '1');
+            table.style.borderCollapse = 'collapse';
+            table.style.width = '100%';
+
+            // Create header row
+            const headerRow = document.createElement('tr');
+            const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            daysOfWeek.forEach(day => {
+                const th = document.createElement('th');
+                th.textContent = day;
+                headerRow.appendChild(th);
+            });
+            table.appendChild(headerRow);
+
+            // Create calendar rows
+            let currentDay = 1;
+            for (let i = 0; i < 6; i++) {
+                const row = document.createElement('tr');
+                for (let j = 0; j < 7; j++) {
+                    const cell = document.createElement('td');
+                    if (i === 0 && j < firstDayOfWeek) {
+                        cell.textContent = '';
+                    } else if (currentDay > daysInMonth) {
+                        cell.textContent = '';
+                    } else {
+                        cell.setAttribute('data-date', currentDay); // Add data-date attribute
+                        currentDay++;
+                    }
+                    row.appendChild(cell);
+                }
+                table.appendChild(row);
+                if (currentDay > daysInMonth) break;
+            }
+
+            return table;
+        }
+
+        // Generate default calendar for the current month and year on page load
+        window.onload = function () {
+            const currentMonth = new Date().getMonth() + 1; // Months are 0-indexed
+            const currentYear = new Date().getFullYear();
+
+            // Set default values for the dropdown and input
+            document.getElementById('month').value = currentMonth;
+            document.getElementById('year').value = currentYear;
+
+            // Generate the calendar
+            generateCalendar();
+
+            // Add event listener for the slider
+            const cellSizeSlider = document.getElementById('cellSize');
+            const cellSizeValue = document.getElementById('cellSizeValue');
+            cellSizeSlider.addEventListener('input', function () {
+                const size = this.value;
+                cellSizeValue.textContent = `${size}px`; // Update the displayed value
+                adjustCellSize(size); // Adjust cell size
+            });
+        };
+    </script>
+</body>
+</html>
